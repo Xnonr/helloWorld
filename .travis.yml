@@ -1,0 +1,24 @@
+sudo: true
+
+service:
+  - docker
+
+install: true
+
+jobs:
+  include:
+    - stage: build docker image
+      script:
+      - export DMAINREPO=$DOCKER_NAMESPACE/helloworld
+      - export VERSION=0.0.1
+      - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+      - docker build -t $DMAINREPO:$VERSION -f build/Dockerfile .
+      - docker tag $DMAINREPO:$VERSION $DMAINREPO:latest
+      - docker tag $DMAINREPO:$VERSION $DMAINREPO:travis-$TRAVIS_BUILD_NUMBER
+      - docker push $DMAINREPO
+    - stage: test docker image
+      script:
+      - export DMAINREPO=$DOCKER_NAMESPACE/helloworld
+      - export VERSION=0.0.1
+      - docker run -d --name test_helloworld $DMAINREPO:$VERSION
+      - docker ps | grep -q test_helloworld
